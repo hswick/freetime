@@ -1,0 +1,12 @@
+[package]
+name = "freetime_app"
+version = "0.1.0"
+authors = ["hswick <hdswick@gmail.com>"]
+
+[dependencies]
+web-view = "0.4.0"
+serde_json = "1.0"
+serde = "1.0"
+serde_derive = "1.0"
+nickel = { git = "https://github.com/jolhoeft/nickel.rs.git", branch = "serde" }
+nickel_sled = { path = "../../nickel_sled" }
