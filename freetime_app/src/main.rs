@@ -29,14 +29,16 @@ struct DayResponse {
 
 fn run_server() {
 
-    //thread::spawn(|| {
+    thread::spawn(|| {
         
         let mut server = Nickel::new();
         
         let s = SledMiddleware::new();
         server.utilize(s);
-        
-        server.get("/", middleware!("<div id='app'> Hello, World! </div>"));
+
+        let index_file: String = std::fs::read_to_string("assets/index.html").expect("Could not find index.html in assets");
+
+        server.get("/", middleware!(&index_file[..]));
         server.utilize(StaticFilesHandler::new("assets/"));
         
         server.get("/day/:date", middleware! { |req|
@@ -44,19 +46,17 @@ fn run_server() {
             
             let mut units: Vec<HourUnit> = Vec::<HourUnit>::new();
 
-            for _ in 8..20 {
+            for _ in 8..21 {
                 let content = match req.sled_conn().get(&date) {
                     Ok(Some(value)) => Some(str::from_utf8(&value).unwrap().to_string()),
                     Ok(None) => None,
                     Err(err) => Some(err.to_string())
                 };
 
-                units.push(HourUnit { date_hour : date.to_string().clone(), content: content })
-            }
+                units.push(HourUnit { date_hour: date.to_string().clone(), content: content })
+            }           
             
-            let day_response = DayResponse { hour_units: units.clone() };
-            
-            match serde_json::to_string(&day_response) {
+            match serde_json::to_string(&units) {
                 Ok(json) => json,
                 Err(err) => err.to_string()
             }
@@ -77,13 +77,13 @@ fn run_server() {
         });
         
         server.listen("127.0.0.1:6767").unwrap();
-    //});
+    });
 }
 
 fn display() {
     web_view::builder()
         .title("free your time, free you mind")
-        .content(Content::Url("http://localhost:6767"))
+        .content(Content::Url("http://localhost:6767/"))
         .size(800, 600)
         .resizable(true)
         .debug(true)
@@ -95,5 +95,5 @@ fn display() {
 
 fn main() {
     run_server();
-    //display();
+    display();
 }

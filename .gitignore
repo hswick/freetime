@@ -1,3 +1,5 @@
 elm-stuff
 /freetime_app/target
 /freetime_app/**/*.rs.bk
+/freetime_app/assets/*.js
+/freetime_app/assets/index.html
