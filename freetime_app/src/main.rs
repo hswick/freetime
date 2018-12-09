@@ -22,16 +22,6 @@ struct HourUnit {
     content: Option<String>
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct DatesResponse {
-    hour_units: Vec<HourUnit>
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct DatesRequest {
-    dates: Vec<String>
-}
-
 fn run_server() {
 
     thread::spawn(|| {
@@ -46,17 +36,15 @@ fn run_server() {
         server.get("/", middleware!(&index_file[..]));
         server.utilize(StaticFilesHandler::new("assets/"));
         
-        server.get("/dates", middleware! { |request, response|                              
+        server.post("/week", middleware! { |request, response|                              
             
-            let dates_request = try_with!(response, {
-                request.json_as::<DatesRequest>().map_err(|e| (StatusCode::BadRequest, e))
+            let week_request = try_with!(response, {
+                request.json_as::<Vec<String>>().map_err(|e| (StatusCode::BadRequest, e))
             });
             
-            let mut  week: Vec<Vec<HourUnit>> = Vec::<Vec<HourUnit>>::new();
+            let mut  week: Vec<HourUnit> = Vec::<HourUnit>::new();
             
-            for date in dates_request.dates.iter() {
-                
-                let mut units: Vec<HourUnit> = Vec::<HourUnit>::new() ;
+            for date in week_request.iter() {
                 
                 for i in 8..21 {
                     
@@ -68,10 +56,9 @@ fn run_server() {
                      
                      let date_hour = format!("{:?}_{:?}", &date, i);
 
-                    units.push(HourUnit { date_hour: date_hour, content: content });
+                    week.push(HourUnit { date_hour: date_hour, content: content });
                 }
                 
-                week.push(units);
             }         
             
             match serde_json::to_string(&week) {

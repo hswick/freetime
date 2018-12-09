@@ -1,4 +1,4 @@
-module Main exposing (HourUnit, Model, Msg(..), dayColumn, dayDecoder, dayHourView, getDay, hour, hourUnitDecoder, hoursColumn, init, inputButton, inputColumn, inputElement, main, planner, subscriptions, update, view)
+
 
 import Browser
 import Element exposing (Element, alignRight, centerY, column, el, fill, height, maximum, padding, rgb255, row, spacing, text, width)
@@ -36,16 +36,17 @@ type alias HourUnit =
 
 type alias Model =
     { input : String
-    , day : List HourUnit
+    , week : List HourUnit
     , errorMessage : String
     }
 
 
-getDay : Cmd Msg
-getDay =
-    Http.get
-        { url = "/day/4_20_2069"
-        , expect = Http.expectJson GetDay dayDecoder
+getWeek : Cmd Msg
+getWeek =
+    Http.post
+        { url = "/week"
+        , expect = Http.expectJson GetWeek weekDecoder
+        , body = Http.jsonBody (E.list E.string ["4_20_2016", "4_21_2016", "4_22_2016", "4_23_2016", "4_24_2016", "4_25_2016", "4_26_2016"])
         }
 
 hourUnitDecoder : D.Decoder HourUnit
@@ -55,18 +56,18 @@ hourUnitDecoder =
         (D.field "content" (D.nullable D.string))
 
 
-dayDecoder : D.Decoder (List HourUnit)
-dayDecoder =
+weekDecoder : D.Decoder (List HourUnit)
+weekDecoder =
     D.list hourUnitDecoder
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
-      , day = []
+      , week = []
       , errorMessage = ""
       }
-    , getDay
+    , getWeek
     )
 
 
@@ -91,7 +92,7 @@ errorMessage error =
 type Msg
     = Change String
     | PressButton
-    | GetDay (Result Http.Error (List HourUnit))
+    | GetWeek (Result Http.Error (List HourUnit))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,10 +104,10 @@ update msg model =
         PressButton ->
             ( model, Cmd.none )
 
-        GetDay result ->
+        GetWeek result ->
             case result of
-                Ok day ->
-                    ( { model | day = day }, Cmd.none )
+                Ok week ->
+                    ( { model | week = week }, Cmd.none )
 
                 Err err ->
                     ( { model | errorMessage = (errorMessage err) }, Cmd.none )
@@ -133,15 +134,7 @@ view model =
 planner : Model -> Element Msg
 planner model =
     row []
-        [ hoursColumn
-        , dayColumn2 model "Sunday"
-        , dayColumn "Monday"
-        , dayColumn "Tuesday"
-        , dayColumn "Wednesday"
-        , dayColumn "Thursday"
-        , dayColumn "Friday"
-        , dayColumn "Saturday"
-        , inputColumn model
+        [ inputColumn model
         , errorView model
         ]
 
@@ -176,65 +169,3 @@ inputButton =
         { onPress = Just PressButton
         , label = el [] (text "Submit")
         }
-        
-
-dayColumn : String -> Element msg
-dayColumn day =
-    column [ Element.alignTop ]
-        (List.concat
-            [ [ el [ padding 30, width fill ] (text day) ]
-            , List.map dayHourView (List.range 0 12)
-            ]
-        )
-
-dayColumn2 : Model -> String -> Element msg
-dayColumn2 model day =
-    column [ Element.alignTop ]
-        (List.concat
-            [ [ el [ padding 30, width fill ] (text day) ]
-            , List.map dayHourView2 model.day
-            ]
-        )
-        
-
-dayHourView : Int -> Element msg
-dayHourView _ =
-    Input.button
-        [ padding 30, width fill ]
-        { onPress = Nothing, label = el [] (text "foo") }
-
-dayHourView2 : HourUnit -> Element msg
-dayHourView2 hourUnit =
-    Input.button
-        [ padding 30, width fill ]
-        { onPress = Nothing, label = el [] (text (Maybe.withDefault "" hourUnit.content)) }
-            
-
-hoursColumn : Element msg
-hoursColumn =
-    column [ width fill ]
-        [ el [ padding 30, width fill ] (text "freetime")
-        , hour "8:00"
-        , hour "9:00"
-        , hour "10:00"
-        , hour "11:00"
-        , hour "12:00"
-        , hour "13:00"
-        , hour "14:00"
-        , hour "15:00"
-        , hour "16:00"
-        , hour "17:00"
-        , hour "18:00"
-        , hour "19:00"
-        , hour "20:00"
-        ]
-
-
-hour : String -> Element msg
-hour h =
-    el
-        [ Background.color (rgb255 100 255 100)
-        , padding 30
-        , width fill
-        ]
-        (text h)
