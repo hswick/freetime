@@ -27,6 +27,11 @@ struct DayResponse {
     hour_units: Vec<HourUnit>
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DatesRequest {
+    dates: Vec<String>
+}
+
 fn run_server() {
 
     thread::spawn(|| {
@@ -41,20 +46,24 @@ fn run_server() {
         server.get("/", middleware!(&index_file[..]));
         server.utilize(StaticFilesHandler::new("assets/"));
         
-        server.get("/day/:date", middleware! { |req|
-            let date = req.param("date").unwrap();
+        server.get("/dates", middleware! { |request, response|                              
             
-            let mut units: Vec<HourUnit> = Vec::<HourUnit>::new();
-
-            for _ in 8..21 {
-                let content = match req.sled_conn().get(&date) {
+            let mut units: Vec<HourUnit> = Vec::<HourUnit>::new() ;
+            
+            let dates_request = try_with!(response, {
+                request.json_as::<DatesRequest>().map_err(|e| (StatusCode::BadRequest, e))
+            });
+            
+            for date in dates_request.dates.iter() {
+                
+                let content = match request.sled_conn().get(&date) {
                     Ok(Some(value)) => Some(str::from_utf8(&value).unwrap().to_string()),
                     Ok(None) => None,
                     Err(err) => Some(err.to_string())
                 };
 
-                units.push(HourUnit { date_hour: date.to_string().clone(), content: content })
-            }           
+                units.push(HourUnit { date_hour: date.clone(), content: content });
+            }         
             
             match serde_json::to_string(&units) {
                 Ok(json) => json,
