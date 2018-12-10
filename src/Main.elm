@@ -1,6 +1,7 @@
 import Browser
-import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, text, input)
+import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (..)
 import Http
 import Json.Decode as D exposing (Decoder, field, string)
 import Json.Encode as E
@@ -32,8 +33,20 @@ type alias Model =
     { input : String
     , week : List HourUnit
     , errorMessage : String
+    , selectedHourUnit : HourUnit
     }
 
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { input = ""
+      , week = []
+      , errorMessage = "foobar"
+      , selectedHourUnit = { content = (Just "foo"), dateHour = "4_20_2018" }
+      }
+    , getWeek
+    )
+    
 
 getWeek : Cmd Msg
 getWeek =
@@ -42,6 +55,7 @@ getWeek =
         , expect = Http.expectJson GetWeek weekDecoder
         , body = Http.jsonBody (E.list E.string ["4_20_2016", "4_21_2016", "4_22_2016", "4_23_2016", "4_24_2016", "4_25_2016", "4_26_2016"])
         }
+
 
 hourUnitDecoder : D.Decoder HourUnit
 hourUnitDecoder =
@@ -55,16 +69,23 @@ weekDecoder =
     D.list hourUnitDecoder
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { input = ""
-      , week = []
-      , errorMessage = ""
-      }
-    , getWeek
-    )
+saveHourUnit : HourUnit -> Cmd Msg
+saveHourUnit hourUnit =
+    Http.post
+        { url = "/hour"
+        , expect = Http.expectString SavedHour
+        , body = Http.jsonBody (hourUnitEncoder hourUnit)
+        }
 
 
+hourUnitEncoder : HourUnit -> E.Value
+hourUnitEncoder hourUnit =
+    E.object
+        [ ("date_hour", E.string hourUnit.dateHour)
+        , ("content", E.string (Maybe.withDefault "" hourUnit.content))
+        ]
+ 
+        
 errorMessage : Http.Error -> String
 errorMessage error =
   case error of
@@ -77,8 +98,7 @@ errorMessage error =
     Http.BadStatus code ->
       ( "Bad Status " ++ (String.fromInt code) )
     Http.BadBody s ->
-      ( "BadBody " ++ s )
-    
+      ( "BadBody " ++ s )          
 
 -- UPDATE
 
@@ -87,6 +107,8 @@ type Msg
     = Change String
     | PressButton
     | GetWeek (Result Http.Error (List HourUnit))
+    | SelectHourUnit HourUnit
+    | SavedHour (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,7 +118,10 @@ update msg model =
             ( { model | input = newInput }, Cmd.none )
 
         PressButton ->
-            ( { model | input = "" }, Cmd.none )
+            ( { model | input = "" }, saveHourUnit { dateHour = model.selectedHourUnit.dateHour, content = (Just model.input) })
+
+        SelectHourUnit hourUnit ->
+            ( { model | selectedHourUnit = hourUnit }, Cmd.none )
 
         GetWeek result ->
             case result of
@@ -106,6 +131,13 @@ update msg model =
                 Err err ->
                     ( { model | errorMessage = (errorMessage err) }, Cmd.none )
 
+        SavedHour result ->
+            case result of
+                Ok message ->
+                    ( { model | errorMessage = message }, getWeek )
+
+                Err err ->
+                    ( { model | errorMessage = (errorMessage err) }, Cmd.none )
 
 
 -- SUBSCRIPTIONS
@@ -116,11 +148,37 @@ subscriptions model =
     Sub.none
 
 
-
 -- VIEW
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ button [ onClick PressButton ] [ text "Submit" ]]
+        [ input [ placeholder "", value model.input, onInput Change ] []
+        , button [ onClick PressButton ] [ text "Submit" ]
+        , (text model.errorMessage)
+        , selectedHourUnitView model
+        , weekView model
+        ]
+
+        
+selectedHourUnitView : Model -> Html Msg
+selectedHourUnitView model =
+    div []
+        [ (text model.selectedHourUnit.dateHour)
+        , (text (Maybe.withDefault "" model.selectedHourUnit.content))
+        ]
+
+        
+weekView : Model -> Html Msg
+weekView model =
+    div []
+        (List.map hourUnitView model.week)
+
+            
+hourUnitView : HourUnit -> Html Msg
+hourUnitView hourUnit =
+    div []
+        [ Html.h2 [] [ (text (Maybe.withDefault "content" hourUnit.content)) ]
+        , button [ onClick (SelectHourUnit hourUnit) ] [ (text hourUnit.dateHour) ]
+        ]

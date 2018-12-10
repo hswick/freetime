@@ -19,7 +19,7 @@ use nickel_sled::{SledMiddleware, SledRequestExtensions};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct HourUnit {
     date_hour: String,
-    content: Option<String>
+    content: String
 }
 
 fn run_server() {
@@ -47,24 +47,28 @@ fn run_server() {
             for date in week_request.iter() {
                 
                 for i in 8..21 {
-                    
-                    let content = match request.sled_conn().get(&date) {
-                        Ok(Some(value)) => Some(str::from_utf8(&value).unwrap().to_string()),
-                        Ok(None) => None,
-                        Err(err) => Some(err.to_string())
-                     };
-                     
-                     let date_hour = format!("{}_{:?}", &date, i);
 
-                    week.push(HourUnit { date_hour: date_hour, content: content });
+                    let date_hour = format!("{}_{:?}", &date, i);                    
+                    
+                    let content = match request.sled_conn().get(&date_hour.as_bytes()) {
+                        Ok(Some(value)) => str::from_utf8(&value).unwrap().to_string(),
+                        Ok(None) => "".to_string(),
+                        Err(err) => err.to_string()
+                     };                     
+
+                     week.push(HourUnit { date_hour: date_hour, content: content });
                 }
                 
-            }         
+            } 
             
-            match serde_json::to_string(&week) {
+            let w = match serde_json::to_string(&week) {
                 Ok(json) => json,
                 Err(err) => err.to_string()
-            }
+            };
+
+            println!("{}", w);
+
+            w
         });
         
         server.post("/hour", middleware! { |request, response|
@@ -75,9 +79,16 @@ fn run_server() {
             
             request.sled_conn().set(
                 hour_unit.date_hour.as_bytes(), 
-                hour_unit.content.unwrap().as_bytes().to_vec()
+                hour_unit.content.as_bytes().to_vec()
             ).unwrap();
-            
+
+            let hu = match serde_json::to_string(&hour_unit) {
+                Ok(json) => json,
+                Err(err) => err.to_string()
+            };
+
+            println!("{}", hu);
+                                            
             "Timeslot updated"
         });
         
