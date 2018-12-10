@@ -41,8 +41,8 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
       , week = []
-      , errorMessage = "foobar"
-      , selectedHourUnit = { content = (Just "foo"), dateHour = "4_20_2018" }
+      , errorMessage = ""
+      , selectedHourUnit = { content = (Just ""), dateHour = "" }
       }
     , getWeek
     )
@@ -169,7 +169,7 @@ selectedHourUnitView model =
         , (text (Maybe.withDefault "" model.selectedHourUnit.content))
         ]
 
-        
+
 weekView : Model -> Html Msg
 weekView model =
     div []
@@ -179,6 +179,6 @@ weekView model =
 hourUnitView : HourUnit -> Html Msg
 hourUnitView hourUnit =
     div []
-        [ Html.h2 [] [ (text (Maybe.withDefault "content" hourUnit.content)) ]
+        [ Html.h2 [] [ (text (Maybe.withDefault "" hourUnit.content)) ]
         , button [ onClick (SelectHourUnit hourUnit) ] [ (text hourUnit.dateHour) ]
         ]
