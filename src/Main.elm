@@ -1,12 +1,6 @@
-
-
 import Browser
-import Element exposing (Element, alignRight, centerY, column, el, fill, height, maximum, padding, rgb255, row, spacing, text, width)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Element.Input as Input
-import Html exposing (Html)
+import Html exposing (Html, button, div, text)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode as D exposing (Decoder, field, string)
 import Json.Encode as E
@@ -102,7 +96,7 @@ update msg model =
             ( { model | input = newInput }, Cmd.none )
 
         PressButton ->
-            ( model, Cmd.none )
+            ( { model | input = "" }, Cmd.none )
 
         GetWeek result ->
             case result of
@@ -128,44 +122,5 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    Element.layout [] (planner model)
-
-
-planner : Model -> Element Msg
-planner model =
-    row []
-        [ inputColumn model
-        , errorView model
-        ]
-
-
-errorView : Model -> Element Msg
-errorView model =
-    text model.errorMessage
-
-        
-inputColumn : Model -> Element Msg
-inputColumn model =
-    column [ Element.alignTop, width fill ]
-        [ inputElement model
-        , inputButton
-        ]
-
-
-inputElement : Model -> Element Msg
-inputElement model =
-    Input.multiline [ width (fill |> Element.minimum 300), height (fill |> Element.minimum 100) ]
-        { onChange = Change
-        , text = model.input
-        , placeholder = Nothing
-        , label = Input.labelAbove [] (el [ padding 30 ] (text "4/20/2069"))
-        , spellcheck = False
-        }
-
-
-inputButton : Element Msg
-inputButton =
-    Input.button [ padding 10, Element.alignRight, Background.color (rgb255 0 100 255), Font.color (rgb255 255 255 255) ]
-        { onPress = Just PressButton
-        , label = el [] (text "Submit")
-        }
+    div []
+        [ button [ onClick PressButton ] [ text "Submit" ]]

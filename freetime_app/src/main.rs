@@ -54,7 +54,7 @@ fn run_server() {
                         Err(err) => Some(err.to_string())
                      };
                      
-                     let date_hour = format!("{:?}_{:?}", &date, i);
+                     let date_hour = format!("{}_{:?}", &date, i);
 
                     week.push(HourUnit { date_hour: date_hour, content: content });
                 }
