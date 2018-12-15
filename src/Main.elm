@@ -1,11 +1,16 @@
 import Browser
-import Html exposing (Html, button, div, text, input)
-import Html.Events exposing (onClick, onInput)
-import Html.Attributes exposing (..)
+
+import Css exposing (..)
+import Html
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (css, value, placeholder)
+import Html.Styled.Events exposing (onClick, onInput)
+
 import Http
 import Json.Decode as D exposing (Decoder, field, string)
 import Json.Encode as E
 import Maybe exposing (Maybe)
+import Array exposing (Array)
 
 
 -- MAIN
@@ -16,7 +21,7 @@ main =
         { init = init
         , update = update
         , subscriptions = subscriptions
-        , view = view
+        , view = view >> toUnstyled
         }
 
 
@@ -41,7 +46,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
       , week = []
-      , errorMessage = ""
+      , errorMessage = "Select an hour unit and fill in the content."
       , selectedHourUnit = { content = (Just ""), dateHour = "" }
       }
     , getWeek
@@ -151,14 +156,25 @@ subscriptions model =
 -- VIEW
 
 
+type alias HourUnitTable =
+    List (List (Maybe HourUnit))
+
+
 view : Model -> Html Msg
 view model =
     div []
-        [ input [ placeholder "", value model.input, onInput Change ] []
+        [ inputView model
+        , selectedHourUnitView model
+        , hourUnitTableView (model.week |> Array.fromList |> partitionHourUnits)
+        ]
+
+
+inputView : Model -> Html Msg
+inputView model =
+    div [ css [ border2 (px 10) solid, marginBottom (px 5) ] ]
+        [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 90) ] ] []
         , button [ onClick PressButton ] [ text "Submit" ]
         , (text model.errorMessage)
-        , selectedHourUnitView model
-        , weekView model
         ]
 
         
@@ -170,15 +186,46 @@ selectedHourUnitView model =
         ]
 
 
-weekView : Model -> Html Msg
-weekView model =
-    div []
-        (List.map hourUnitView model.week)
+partitionHourUnits : (Array HourUnit) -> (List (List (Maybe HourUnit)))
+partitionHourUnits hourUnits =
+    ( List.map ( splitDays hourUnits ) (List.range 1 14) )
 
-            
+        
+splitDays : (Array HourUnit) -> Int -> List (Maybe HourUnit)
+splitDays hourUnits i =
+    ( List.map
+          (\j -> Array.get j hourUnits)
+          (List.range (i * 1) (i * 7))
+    )
+        
+hourUnitTableView : HourUnitTable -> Html Msg
+hourUnitTableView hourUnitTable =
+    Html.Styled.table []
+        (List.map hourRowView hourUnitTable)
+
+
+hourRowView : List (Maybe HourUnit) -> Html Msg
+hourRowView hourUnitRow =
+    tr []
+       (List.map maybeHourUnitView hourUnitRow)
+
+           
+maybeHourUnitView : Maybe HourUnit -> Html Msg
+maybeHourUnitView hourUnit =
+    let
+        hu = Maybe.withDefault { dateHour = "not found", content = Just "" } hourUnit
+    in
+        case hu.dateHour of
+            "not found" ->
+                td [] [ (text "not found") ]
+
+            _ ->
+                hourUnitView hu
+                    
+
 hourUnitView : HourUnit -> Html Msg
 hourUnitView hourUnit =
-    div []
-        [ Html.h2 [] [ (text (Maybe.withDefault "" hourUnit.content)) ]
-        , button [ onClick (SelectHourUnit hourUnit) ] [ (text hourUnit.dateHour) ]
-        ]
+    td []
+       [ (text (Maybe.withDefault "" hourUnit.content))
+       , button [] [ (text hourUnit.dateHour) ]
+       ]

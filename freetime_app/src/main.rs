@@ -30,11 +30,11 @@ fn run_server() {
         
         let s = SledMiddleware::new();
         server.utilize(s);
-
-        let index_file: String = std::fs::read_to_string("assets/index.html").expect("Could not find index.html in assets");
-
-        server.get("/", middleware!(&index_file[..]));
+        
         server.utilize(StaticFilesHandler::new("assets/"));
+        
+        let index_file: String = std::fs::read_to_string("assets/index.html").expect("Could not find index.html in assets");
+        server.get("/", middleware!(&index_file[..]));
         
         server.post("/week", middleware! { |request, response|                              
             
@@ -98,7 +98,7 @@ fn run_server() {
 
 fn display() {
     web_view::builder()
-        .title("free your time, free you mind")
+        .title("free your time, free your mind")
         .content(Content::Url("http://localhost:6767/"))
         .size(800, 600)
         .resizable(true)
