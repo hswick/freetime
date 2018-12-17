@@ -30,7 +30,7 @@ main =
 
 type alias HourUnit =
     { dateHour : String
-    , content : Maybe String
+    , content : String
     }
 
 
@@ -47,7 +47,7 @@ init _ =
     ( { input = ""
       , week = []
       , errorMessage = "Select an hour unit and fill in the content."
-      , selectedHourUnit = { content = (Just ""), dateHour = "" }
+      , selectedHourUnit = { content = "", dateHour = "" }
       }
     , getWeek
     )
@@ -66,7 +66,7 @@ hourUnitDecoder : D.Decoder HourUnit
 hourUnitDecoder =
     D.map2 HourUnit
         (D.field "date_hour" D.string)
-        (D.field "content" (D.nullable D.string))
+        (D.field "content" D.string)
 
 
 weekDecoder : D.Decoder (List HourUnit)
@@ -87,7 +87,7 @@ hourUnitEncoder : HourUnit -> E.Value
 hourUnitEncoder hourUnit =
     E.object
         [ ("date_hour", E.string hourUnit.dateHour)
-        , ("content", E.string (Maybe.withDefault "" hourUnit.content))
+        , ("content", E.string hourUnit.content)
         ]
  
         
@@ -123,7 +123,7 @@ update msg model =
             ( { model | input = newInput }, Cmd.none )
 
         PressButton ->
-            ( { model | input = "" }, saveHourUnit { dateHour = model.selectedHourUnit.dateHour, content = (Just model.input) })
+            ( { model | input = "" }, saveHourUnit { dateHour = model.selectedHourUnit.dateHour, content = model.input })
 
         SelectHourUnit hourUnit ->
             ( { model | selectedHourUnit = hourUnit }, Cmd.none )
@@ -163,7 +163,7 @@ type alias HourUnitTable =
 view : Model -> Html Msg
 view model =
     div []
-        [ hourUnitTableView (model.week |> Array.fromList |> partitionHourUnits)
+        [ hourUnitTableView model
         , terminalView model
         ]
 
@@ -189,7 +189,7 @@ selectedHourUnitView : Model -> Html Msg
 selectedHourUnitView model =
     div []
         [ (text model.selectedHourUnit.dateHour)
-        , (text (Maybe.withDefault "" model.selectedHourUnit.content))
+        , (text model.selectedHourUnit.content)
         ]
 
 
@@ -205,34 +205,51 @@ splitHours hourUnits hour =
           (List.range 0 4)
     )
         
-hourUnitTableView : HourUnitTable -> Html Msg
-hourUnitTableView hourUnitTable =
-    Html.Styled.table [ css [ width (pct 50), float left, overflowWrap breakWord ] ]
-        (List.map hourRowView hourUnitTable)
+hourUnitTableView : Model -> Html Msg
+hourUnitTableView model =
+    let
+        hourUnitTable = (model.week |> Array.fromList |> partitionHourUnits)
+    in
+        Html.Styled.table [ css [ width (pct 50), float left, overflowWrap breakWord ] ]
+            (List.map (hourRowView model) hourUnitTable)
 
 
-hourRowView : List (Maybe HourUnit) -> Html Msg
-hourRowView hourUnitRow =
+hourRowView : Model -> List (Maybe HourUnit) -> Html Msg
+hourRowView model hourUnitRow =
     tr []
-       (List.map maybeHourUnitView hourUnitRow)
+       (List.map (maybeHourUnitView model) hourUnitRow)
 
            
-maybeHourUnitView : Maybe HourUnit -> Html Msg
-maybeHourUnitView hourUnit =
+maybeHourUnitView : Model -> Maybe HourUnit -> Html Msg
+maybeHourUnitView model hourUnit =
     let
-        hu = Maybe.withDefault { dateHour = "not found", content = Just "" } hourUnit
+        hu = Maybe.withDefault { dateHour = "not found", content = "" } hourUnit
     in
         case hu.dateHour of
             "not found" ->
                 td [] [ (text "not found") ]
 
             _ ->
-                hourUnitView hu
+                hourUnitView model hu
                     
 
-hourUnitView : HourUnit -> Html Msg
-hourUnitView hourUnit =
-    td [ css [ width (pct 10), border2 (px 3) solid, padding (px 3) ]
-       , onClick (SelectHourUnit hourUnit)
-       ]
-       [ (text (Maybe.withDefault "" hourUnit.content ))]
+hourUnitView : Model -> HourUnit -> Html Msg
+hourUnitView model hourUnit =
+    let
+        color = selectHourUnitColor model hourUnit
+    in
+        td
+        [ css [ width (pct 10), border2 (px 3) solid, padding (px 3), backgroundColor color ]
+           , onClick (SelectHourUnit hourUnit)
+        ]
+        [ (text hourUnit.content)]
+
+
+selectHourUnitColor : Model -> HourUnit -> Color
+selectHourUnitColor model hourUnit =
+    if model.selectedHourUnit.dateHour == hourUnit.dateHour then
+        (rgb 255 0 0)
+    else if hourUnit.content == "" then
+        (rgb 255 255 255)
+    else
+        (rgb 0 255 0)
