@@ -156,10 +156,6 @@ subscriptions model =
 -- VIEW
 
 
-type alias HourUnitTable =
-    List (List (Maybe HourUnit))
-
-
 view : Model -> Html Msg
 view model =
     div []
