@@ -206,13 +206,13 @@ hourUnitTableView model =
     let
         hourUnitTable = (model.week |> Array.fromList |> partitionHourUnits)
     in
-        Html.Styled.table [ css [ width (pct 50), float left, overflowWrap breakWord ] ]
+        Html.Styled.table [css [ float left, width (pct 50), height (vh 97)] ]
             (List.map (hourRowView model) hourUnitTable)
 
 
 hourRowView : Model -> List (Maybe HourUnit) -> Html Msg
 hourRowView model hourUnitRow =
-    tr []
+    tr [ css [] ]
        (List.map (maybeHourUnitView model) hourUnitRow)
 
            
@@ -235,10 +235,10 @@ hourUnitView model hourUnit =
         color = selectHourUnitColor model hourUnit
     in
         td
-        [ css [ width (pct 10), border2 (px 3) solid, padding (px 3), backgroundColor color ]
-           , onClick (SelectHourUnit hourUnit)
+        [ css [ border2 (px 1) solid, backgroundColor color ]
+        , onClick (SelectHourUnit hourUnit)
         ]
-        [ (text hourUnit.content)]
+        [div [] []]
 
 
 selectHourUnitColor : Model -> HourUnit -> Color
