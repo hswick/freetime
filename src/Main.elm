@@ -58,7 +58,7 @@ getWeek =
     Http.post
         { url = "/week"
         , expect = Http.expectJson GetWeek weekDecoder
-        , body = Http.jsonBody (E.list E.string ["4_20_2016", "4_21_2016", "4_22_2016", "4_23_2016", "4_24_2016", "4_25_2016", "4_26_2016"])
+        , body = Http.jsonBody (E.list E.string ["4_20_2016", "4_21_2016", "4_22_2016", "4_23_2016", "4_24_2016"])
         }
 
 
@@ -163,15 +163,22 @@ type alias HourUnitTable =
 view : Model -> Html Msg
 view model =
     div []
-        [ inputView model
-        , selectedHourUnitView model
-        , hourUnitTableView (model.week |> Array.fromList |> partitionHourUnits)
+        [ hourUnitTableView (model.week |> Array.fromList |> partitionHourUnits)
+        , terminalView model
         ]
 
 
+terminalView : Model -> Html Msg
+terminalView model =
+    div [ css [width (pct 50), float left] ]
+        [ inputView model
+        , selectedHourUnitView model
+        ]
+        
+
 inputView : Model -> Html Msg
 inputView model =
-    div [ css [ border2 (px 10) solid, marginBottom (px 5) ] ]
+    div [ css [ marginBottom (px 5) ] ]
         [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 90) ] ] []
         , button [ onClick PressButton ] [ text "Submit" ]
         , (text model.errorMessage)
@@ -188,19 +195,19 @@ selectedHourUnitView model =
 
 partitionHourUnits : (Array HourUnit) -> (List (List (Maybe HourUnit)))
 partitionHourUnits hourUnits =
-    ( List.map ( splitDays hourUnits ) (List.range 1 14) )
+    ( List.map ( splitHours hourUnits ) (List.range 0 12) )
 
         
-splitDays : (Array HourUnit) -> Int -> List (Maybe HourUnit)
-splitDays hourUnits i =
+splitHours : (Array HourUnit) -> Int -> List (Maybe HourUnit)
+splitHours hourUnits hour =
     ( List.map
-          (\j -> Array.get j hourUnits)
-          (List.range (i * 1) (i * 7))
+          (\day -> Array.get ((day * 13) + hour) hourUnits)
+          (List.range 0 4)
     )
         
 hourUnitTableView : HourUnitTable -> Html Msg
 hourUnitTableView hourUnitTable =
-    Html.Styled.table []
+    Html.Styled.table [ css [ width (pct 50), float left, overflowWrap breakWord ] ]
         (List.map hourRowView hourUnitTable)
 
 
@@ -225,7 +232,7 @@ maybeHourUnitView hourUnit =
 
 hourUnitView : HourUnit -> Html Msg
 hourUnitView hourUnit =
-    td []
-       [ (text (Maybe.withDefault "" hourUnit.content))
-       , button [] [ (text hourUnit.dateHour) ]
+    td [ css [ width (pct 10), border2 (px 3) solid, padding (px 3) ]
+       , onClick (SelectHourUnit hourUnit)
        ]
+       [ (text (Maybe.withDefault "" hourUnit.content ))]
