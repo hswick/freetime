@@ -11,6 +11,7 @@ import Json.Decode as D exposing (Decoder, field, string)
 import Json.Encode as E
 import Maybe exposing (Maybe)
 import Array exposing (Array)
+import Task
 
 
 -- MAIN
@@ -41,6 +42,7 @@ type alias Model =
     , selectedHourUnit : HourUnit
     , mouseOverHourUnit : HourUnit
     , inputVisibility : String
+    , inputMessage : String
     }
 
 emptyHourUnit : HourUnit
@@ -50,14 +52,15 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
       , week = []
-      , errorMessage = "Select an hour unit and fill in the content."
+      , errorMessage = ""
       , selectedHourUnit = emptyHourUnit
       , mouseOverHourUnit = emptyHourUnit
       , inputVisibility = "hidden"
+      , inputMessage = "Select an hour unit and fill in the content."
       }
     , getWeek
     )
-    
+
 
 getWeek : Cmd Msg
 getWeek =
@@ -137,7 +140,7 @@ update msg model =
                 ( { model | input = "", selectedHourUnit = newHourUnit }, saveHourUnit newHourUnit )
 
         SelectHourUnit hourUnit ->
-            ( { model | selectedHourUnit = hourUnit, inputVisibility = "visible" }, Cmd.none )
+            ( { model | selectedHourUnit = hourUnit, inputVisibility = "visible", inputMessage = hourUnit.dateHour }, Cmd.none )
 
         MouseOverHourUnit hourUnit ->
             ( { model | mouseOverHourUnit = hourUnit }, Cmd.none )
@@ -183,7 +186,7 @@ view model =
 
 terminalView : Model -> Html Msg
 terminalView model =
-    div [ css [ width (pct 50), float left ] ]
+    div [ css [ width (pct 49), float left, paddingLeft (pct 1) ] ]
         [ mouseOverView model
         , selectedHourUnitView model
         , inputView model
@@ -224,8 +227,8 @@ decodeInputVisibility inputVisibility =
 
 selectedHourUnitView : Model -> Html Msg
 selectedHourUnitView model =
-    div [ css [ height (px 200), borderTop2 (px 10) solid ] ]
-        [ div [] [ (text model.selectedHourUnit.dateHour) ]
+    div [ css [ paddingTop (px 10), height (px 100), borderTop2 (px 10) solid ] ]
+        [ div [] [ (text model.inputMessage) ]
         , div [] [ (text model.selectedHourUnit.content) ]
         ]
 
