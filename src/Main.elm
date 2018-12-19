@@ -3,8 +3,8 @@ import Browser
 import Css exposing (..)
 import Html
 import Html.Styled exposing (..)
-import Html.Styled.Attributes exposing (css, value, placeholder)
-import Html.Styled.Events exposing (onClick, onInput)
+import Html.Styled.Attributes exposing (css, value, placeholder, hidden)
+import Html.Styled.Events exposing (onClick, onInput, onMouseOver, onMouseLeave)
 
 import Http
 import Json.Decode as D exposing (Decoder, field, string)
@@ -39,15 +39,21 @@ type alias Model =
     , week : List HourUnit
     , errorMessage : String
     , selectedHourUnit : HourUnit
+    , mouseOverHourUnit : HourUnit
+    , inputVisibility : String
     }
 
+emptyHourUnit : HourUnit
+emptyHourUnit = { content = "", dateHour = "" }
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
       , week = []
       , errorMessage = "Select an hour unit and fill in the content."
-      , selectedHourUnit = { content = "", dateHour = "" }
+      , selectedHourUnit = emptyHourUnit
+      , mouseOverHourUnit = emptyHourUnit
+      , inputVisibility = "hidden"
       }
     , getWeek
     )
@@ -113,6 +119,8 @@ type Msg
     | PressButton
     | GetWeek (Result Http.Error (List HourUnit))
     | SelectHourUnit HourUnit
+    | MouseOverHourUnit HourUnit
+    | MouseLeaveTable
     | SavedHour (Result Http.Error String)
 
 
@@ -123,10 +131,19 @@ update msg model =
             ( { model | input = newInput }, Cmd.none )
 
         PressButton ->
-            ( { model | input = "" }, saveHourUnit { dateHour = model.selectedHourUnit.dateHour, content = model.input })
+            let
+                newHourUnit = { dateHour = model.selectedHourUnit.dateHour, content = model.input }
+            in
+                ( { model | input = "", selectedHourUnit = newHourUnit }, saveHourUnit newHourUnit )
 
         SelectHourUnit hourUnit ->
-            ( { model | selectedHourUnit = hourUnit }, Cmd.none )
+            ( { model | selectedHourUnit = hourUnit, inputVisibility = "visible" }, Cmd.none )
+
+        MouseOverHourUnit hourUnit ->
+            ( { model | mouseOverHourUnit = hourUnit }, Cmd.none )
+
+        MouseLeaveTable ->
+            ( { model | mouseOverHourUnit = emptyHourUnit }, Cmd.none )
 
         GetWeek result ->
             case result of
@@ -166,26 +183,50 @@ view model =
 
 terminalView : Model -> Html Msg
 terminalView model =
-    div [ css [width (pct 50), float left] ]
-        [ inputView model
+    div [ css [ width (pct 50), float left ] ]
+        [ mouseOverView model
         , selectedHourUnitView model
+        , inputView model
         ]
-        
 
+
+mouseOverView : Model -> Html Msg
+mouseOverView model =
+    let
+        hourUnit = model.mouseOverHourUnit
+                   
+        style = css [ height (px 100) ]
+    in
+        if hourUnit.dateHour == "" then
+            div [ style ]
+                [ (text "Hover mouse over a tile to preview it's contents") ]
+        else
+            div [ style ]
+                [ div [] [ (text hourUnit.dateHour) ]
+                , div [] [ (text hourUnit.content) ]
+                ]
+                
+                
 inputView : Model -> Html Msg
 inputView model =
-    div [ css [ marginBottom (px 5) ] ]
+    div [ css [ marginBottom (px 5) ], hidden (decodeInputVisibility model.inputVisibility) ]
         [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 90) ] ] []
         , button [ onClick PressButton ] [ text "Submit" ]
         , (text model.errorMessage)
         ]
 
-        
+decodeInputVisibility : String -> Bool
+decodeInputVisibility inputVisibility =
+    if inputVisibility == "visible" then
+        False
+    else
+        True
+
 selectedHourUnitView : Model -> Html Msg
 selectedHourUnitView model =
-    div []
-        [ (text model.selectedHourUnit.dateHour)
-        , (text model.selectedHourUnit.content)
+    div [ css [ height (px 200), borderTop2 (px 10) solid ] ]
+        [ div [] [ (text model.selectedHourUnit.dateHour) ]
+        , div [] [ (text model.selectedHourUnit.content) ]
         ]
 
 
@@ -206,7 +247,10 @@ hourUnitTableView model =
     let
         hourUnitTable = (model.week |> Array.fromList |> partitionHourUnits)
     in
-        Html.Styled.table [css [ float left, width (pct 50), height (vh 97)] ]
+        Html.Styled.table
+            [ css [ float left, width (pct 50), height (vh 97)]
+            , onMouseLeave MouseLeaveTable
+            ]
             (List.map (hourRowView model) hourUnitTable)
 
 
@@ -237,14 +281,17 @@ hourUnitView model hourUnit =
         td
         [ css [ border2 (px 1) solid, backgroundColor color ]
         , onClick (SelectHourUnit hourUnit)
+        , onMouseOver (MouseOverHourUnit hourUnit)
         ]
-        [div [] []]
+        []
 
 
 selectHourUnitColor : Model -> HourUnit -> Color
 selectHourUnitColor model hourUnit =
     if model.selectedHourUnit.dateHour == hourUnit.dateHour then
         (rgb 255 0 0)
+    else if model.mouseOverHourUnit.dateHour == hourUnit.dateHour then
+        (rgb 255 255 0)
     else if hourUnit.content == "" then
         (rgb 255 255 255)
     else
