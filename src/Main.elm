@@ -11,7 +11,10 @@ import Json.Decode as D exposing (Decoder, field, string)
 import Json.Encode as E
 import Maybe exposing (Maybe)
 import Array exposing (Array)
+import Time exposing (millisToPosix, utc)
+import Date exposing (Date, floor, add, format, fromPosix)
 import Task
+
 
 
 -- MAIN
@@ -43,11 +46,15 @@ type alias Model =
     , mouseOverHourUnit : HourUnit
     , inputVisibility : String
     , inputMessage : String
+    , indexDate : Date
+    , today : Date
     }
 
+    
 emptyHourUnit : HourUnit
 emptyHourUnit = { content = "", dateHour = "" }
 
+                
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
@@ -57,17 +64,43 @@ init _ =
       , mouseOverHourUnit = emptyHourUnit
       , inputVisibility = "hidden"
       , inputMessage = "Select an hour unit and fill in the content."
+      , indexDate = (fromPosix utc (millisToPosix 0))
+      , today = (fromPosix utc (millisToPosix 0))
       }
-    , getWeek
+    , getToday
     )
 
+    
+getToday : Cmd Msg
+getToday =
+    Task.perform GetToday Date.today
+    
 
-getWeek : Cmd Msg
-getWeek =
+weekDates : Date -> List String
+weekDates date =
+    let
+        beginningOfWeek = floor Date.Monday date
+    in
+        List.map dateToString
+            [ beginningOfWeek
+            , add Date.Days 1 beginningOfWeek
+            , add Date.Days 2 beginningOfWeek
+            , add Date.Days 3 beginningOfWeek
+            , add Date.Days 4 beginningOfWeek
+            ]
+
+
+dateToString : Date -> String
+dateToString date =
+    Date.format "M_d_y" date
+    
+                
+getWeek : List String -> Cmd Msg
+getWeek dates =
     Http.post
         { url = "/week"
         , expect = Http.expectJson GetWeek weekDecoder
-        , body = Http.jsonBody (E.list E.string ["4_20_2016", "4_21_2016", "4_22_2016", "4_23_2016", "4_24_2016"])
+        , body = Http.jsonBody (E.list E.string dates)
         }
 
 
@@ -125,6 +158,7 @@ type Msg
     | MouseOverHourUnit HourUnit
     | MouseLeaveTable
     | SavedHour (Result Http.Error String)
+    | GetToday Date
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -159,10 +193,13 @@ update msg model =
         SavedHour result ->
             case result of
                 Ok message ->
-                    ( { model | errorMessage = message }, getWeek )
+                    ( { model | errorMessage = message }, getWeek (weekDates model.indexDate) )
 
                 Err err ->
                     ( { model | errorMessage = (errorMessage err) }, Cmd.none )
+
+        GetToday date ->
+            ( { model | indexDate = date, today = date }, getWeek (weekDates date) )
 
 
 -- SUBSCRIPTIONS
