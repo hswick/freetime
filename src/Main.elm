@@ -92,7 +92,7 @@ weekDates date =
 
 dateToString : Date -> String
 dateToString date =
-    Date.format "M_d_y" date
+    Date.format "M/d/y" date
     
                 
 getWeek : List String -> Cmd Msg
@@ -174,7 +174,7 @@ update msg model =
                 ( { model | input = "", selectedHourUnit = newHourUnit }, saveHourUnit newHourUnit )
 
         SelectHourUnit hourUnit ->
-            ( { model | selectedHourUnit = hourUnit, inputVisibility = "visible", inputMessage = hourUnit.dateHour }, Cmd.none )
+            ( { model | selectedHourUnit = hourUnit, inputVisibility = "visible", inputMessage = (formatDateHour hourUnit.dateHour) }, Cmd.none )
 
         MouseOverHourUnit hourUnit ->
             ( { model | mouseOverHourUnit = hourUnit }, Cmd.none )
@@ -230,19 +230,34 @@ terminalView model =
         ]
 
 
+formatDateHour : String -> String
+formatDateHour dateHour =
+    let
+        splitDateHour = String.split "_" dateHour
+    in
+        case splitDateHour of
+            [ date, hour ] ->
+                (date ++ " " ++ hour ++ ":00 UTC")
+
+            _ ->
+                "oh no... :O"
+
+            
 mouseOverView : Model -> Html Msg
 mouseOverView model =
     let
         hourUnit = model.mouseOverHourUnit
                    
-        style = css [ height (px 100) ]
+        style = css [ borderBottom2 (px 1) solid, marginBottom (px 5) ]
     in
         if hourUnit.dateHour == "" then
-            div [ style ]
-                [ (text "Hover mouse over a tile to preview it's contents") ]
+            div [ css [ height (px 100) ] ]
+                [ div [ style ]
+                      [ (text "Hover mouse over a tile to preview it's contents") ]
+                ]
         else
-            div [ style ]
-                [ div [] [ (text hourUnit.dateHour) ]
+            div [ css [ height (px 100) ] ]
+                [ div [ style ] [ (text (formatDateHour hourUnit.dateHour)) ]
                 , div [] [ (text hourUnit.content) ]
                 ]
                 
@@ -250,11 +265,23 @@ mouseOverView model =
 inputView : Model -> Html Msg
 inputView model =
     div [ css [ marginBottom (px 5) ], hidden (decodeInputVisibility model.inputVisibility) ]
-        [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 90) ] ] []
-        , button [ onClick PressButton ] [ text "Submit" ]
-        , (text model.errorMessage)
+        [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 100) ] ] []
+        , div [] [ inputButton
+                  , div [ css [ float left ] ] [ (text model.errorMessage) ]
+                  ]
         ]
 
+
+inputButton : Html Msg
+inputButton =              
+    button [ onClick PressButton, css [ backgroundColor (rgb 255 255 255 )
+                                      , border2 (px 3) solid
+                                      , marginRight (px 10)
+                                      , float left
+                                      ]
+           ]
+        [ text "Submit" ]
+    
 decodeInputVisibility : String -> Bool
 decodeInputVisibility inputVisibility =
     if inputVisibility == "visible" then
@@ -265,7 +292,7 @@ decodeInputVisibility inputVisibility =
 selectedHourUnitView : Model -> Html Msg
 selectedHourUnitView model =
     div [ css [ paddingTop (px 10), height (px 100), borderTop2 (px 10) solid ] ]
-        [ div [] [ (text model.inputMessage) ]
+        [ div [ css [ borderBottom2 (px 1) solid, marginBottom (px 5) ] ] [ (text model.inputMessage) ]
         , div [] [ (text model.selectedHourUnit.content) ]
         ]
 

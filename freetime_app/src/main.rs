@@ -42,7 +42,7 @@ fn run_server() {
                 request.json_as::<Vec<String>>().map_err(|e| (StatusCode::BadRequest, e))
             });
             
-            let mut  week: Vec<HourUnit> = Vec::<HourUnit>::new();
+            let mut week: Vec<HourUnit> = Vec::<HourUnit>::new();
             
             for date in week_request.iter() {
                 
@@ -89,7 +89,7 @@ fn run_server() {
 
             println!("{}", hu);
                                             
-            "Timeslot updated"
+            "Hour Updated"
         });
         
         server.listen("127.0.0.1:6767").unwrap();
