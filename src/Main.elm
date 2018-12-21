@@ -75,7 +75,7 @@ getToday : Cmd Msg
 getToday =
     Task.perform GetToday Date.today
 
-
+        
 beforeTodayVisibility : (Date, HourUnit) -> String
 beforeTodayVisibility (today, hourUnit) =
     let
@@ -307,17 +307,19 @@ mouseOverView : Model -> Html Msg
 mouseOverView model =
     let
         hourUnit = model.mouseOverHourUnit
-                   
-        style = css [ marginBottom (px 5) ]
+
+        parentStyle = css [ height (px 100), paddingTop (px 10) ]
+
+        childStyle = css [ marginBottom (px 5), borderBottom2 (px 1) solid ]
     in
         if hourUnit.dateHour == "" then
-            div [ css [ height (px 100) ] ]
-                [ div [ style ]
+            div [ parentStyle ]
+                [ div [ childStyle ]
                       [ (text "Hover mouse over a tile to preview it's contents") ]
                 ]
         else
-            div [ css [ height (px 100) ] ]
-                [ div [ style ] [ (text (formatDateHour hourUnit.dateHour)) ]
+            div [ parentStyle ]
+                [ div [ childStyle ] [ (text (formatDateHour hourUnit.dateHour)) ]
                 , div [] [ (text hourUnit.content) ]
                 ]
                 
@@ -325,7 +327,7 @@ mouseOverView model =
 inputView : Model -> Html Msg
 inputView model =
     div [ css [ marginBottom (px 5) ], hidden (decodeInputVisibility model.inputVisibility) ]
-        [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 100) ] ] []
+        [ input [ placeholder "", value model.input, onInput Change, css [ width (pct 99) ] ] []
         , div [] [ inputButton
                   , div [ css [ float left ] ] [ (text model.errorMessage) ]
                   ]
@@ -417,10 +419,10 @@ hourUnitView model hourUnit =
 selectHourUnitColor : Model -> HourUnit -> Color
 selectHourUnitColor model hourUnit =
     if model.selectedHourUnit.dateHour == hourUnit.dateHour then
-        (rgb 255 0 0)
+        (rgb 255 200 160)
     else if model.mouseOverHourUnit.dateHour == hourUnit.dateHour then
-        (rgb 255 255 0)
+        (rgb 160 239 255)
     else if hourUnit.content == "" then
         (rgb 255 255 255)
     else
-        (rgb 0 255 0)
+        (rgb 221 163 255)
