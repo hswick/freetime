@@ -272,7 +272,7 @@ terminalView model =
 
 weekNavigationView : Model -> Html Msg
 weekNavigationView model =
-    div [ css [ height (px 100), borderBottom2 (px 10) solid ] ]
+    div [ css [ height (px 35), borderBottom2 (px 10) solid ] ]
         [ weekButton ((textAlign left), GetLastWeek, "Last")
         , weekButton ((textAlign center), GetCurrentWeek, "Current")
         , weekButton ((textAlign right), GetNextWeek, "Next")
@@ -342,7 +342,7 @@ inputButton =
                                       , width (px 100)
                                       ]
            ]
-        [ text "Submit" ]
+        [ text "Edit" ]
     
 decodeInputVisibility : String -> Bool
 decodeInputVisibility inputVisibility =
