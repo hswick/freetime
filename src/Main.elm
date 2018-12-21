@@ -224,12 +224,28 @@ view model =
 terminalView : Model -> Html Msg
 terminalView model =
     div [ css [ width (pct 49), float left, paddingLeft (pct 1) ] ]
-        [ mouseOverView model
+        [ weekNavigationView model
+        , mouseOverView model
         , selectedHourUnitView model
         , inputView model
         ]
 
 
+weekNavigationView : Model -> Html Msg
+weekNavigationView model =
+    let
+        buttonContainerStyle = [ width (pct 33), float left ]
+        
+        buttonStyle = css [ backgroundColor (rgb 255 255 255 ), border2 (px 3) solid, float center, margin auto, width (px 100) ]
+                      
+    in
+        div [ css [ height (px 40), borderBottom2 (px 10) solid, textAlign center ] ]
+            [ div [ css (buttonContainerStyle ++ [ textAlign left ]) ] [ button [ buttonStyle ] [ (text "Last") ] ]
+            , div [ css (buttonContainerStyle ++ [ textAlign center ]) ] [ button [ buttonStyle ] [ (text "Current") ] ]
+            , div [ css (buttonContainerStyle ++ [ textAlign right ]) ] [ button [ buttonStyle ] [ (text "Next") ] ]
+            ]
+
+        
 formatDateHour : String -> String
 formatDateHour dateHour =
     let
@@ -248,7 +264,7 @@ mouseOverView model =
     let
         hourUnit = model.mouseOverHourUnit
                    
-        style = css [ borderBottom2 (px 1) solid, marginBottom (px 5) ]
+        style = css [ marginBottom (px 5) ]
     in
         if hourUnit.dateHour == "" then
             div [ css [ height (px 100) ] ]
@@ -278,6 +294,7 @@ inputButton =
                                       , border2 (px 3) solid
                                       , marginRight (px 10)
                                       , float left
+                                      , width (px 100)
                                       ]
            ]
         [ text "Submit" ]
