@@ -159,6 +159,9 @@ type Msg
     | MouseLeaveTable
     | SavedHour (Result Http.Error String)
     | GetToday Date
+    | GetLastWeek
+    | GetCurrentWeek
+    | GetNextWeek
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -201,6 +204,22 @@ update msg model =
         GetToday date ->
             ( { model | indexDate = date, today = date }, getWeek (weekDates date) )
 
+        GetLastWeek ->
+            let
+                newIndexDate = (add Date.Days -7 model.indexDate)
+            in
+                ( { model | indexDate = newIndexDate }, getWeek (weekDates newIndexDate) )
+
+        GetCurrentWeek ->
+            ( model, getToday )
+
+        GetNextWeek ->
+            let
+                newIndexDate = (add Date.Days 7 model.indexDate)
+            in
+                ( { model | indexDate = newIndexDate }, getWeek (weekDates newIndexDate) ) 
+                    
+
 
 -- SUBSCRIPTIONS
 
@@ -233,17 +252,21 @@ terminalView model =
 
 weekNavigationView : Model -> Html Msg
 weekNavigationView model =
-    let
-        buttonContainerStyle = [ width (pct 33), float left ]
+    div [ css [ height (px 100), borderBottom2 (px 10) solid ] ]
+        [ weekButton ((textAlign left), GetLastWeek, "Last")
+        , weekButton ((textAlign center), GetCurrentWeek, "Current")
+        , weekButton ((textAlign right), GetNextWeek, "Next")
+        ]
         
+
+weekButton : (Style, Msg, String) -> Html Msg
+weekButton (s, m, t) =
+    let
+        buttonContainerStyle = [ width (pct 33), float left, s ]
+                               
         buttonStyle = css [ backgroundColor (rgb 255 255 255 ), border2 (px 3) solid, float center, margin auto, width (px 100) ]
-                      
     in
-        div [ css [ height (px 40), borderBottom2 (px 10) solid, textAlign center ] ]
-            [ div [ css (buttonContainerStyle ++ [ textAlign left ]) ] [ button [ buttonStyle ] [ (text "Last") ] ]
-            , div [ css (buttonContainerStyle ++ [ textAlign center ]) ] [ button [ buttonStyle ] [ (text "Current") ] ]
-            , div [ css (buttonContainerStyle ++ [ textAlign right ]) ] [ button [ buttonStyle ] [ (text "Next") ] ]
-            ]
+        div [ css buttonContainerStyle ] [ button [ onClick m, buttonStyle ] [ (text t) ] ]
 
         
 formatDateHour : String -> String
