@@ -12,7 +12,7 @@ import Json.Encode as E
 import Maybe exposing (Maybe)
 import Array exposing (Array)
 import Time exposing (millisToPosix, utc)
-import Date exposing (Date, floor, add, format, fromPosix)
+import Date exposing (Date, floor, add, format, compare, fromPosix)
 import Task
 
 
@@ -74,6 +74,24 @@ init _ =
 getToday : Cmd Msg
 getToday =
     Task.perform GetToday Date.today
+
+
+beforeTodayVisibility : (Date, HourUnit) -> String
+beforeTodayVisibility (today, hourUnit) =
+    let
+        dateString = Maybe.withDefault "" ((String.split "_" hourUnit.dateHour) |> List.head)
+                     
+        date = Date.fromIsoString dateString
+    in
+        case date of
+            Ok d ->
+                if (compare d today) == LT then
+                    "hidden"
+                else
+                    "visible"
+
+            Err _ ->
+                "hidden"
     
 
 weekDates : Date -> List String
@@ -92,7 +110,7 @@ weekDates date =
 
 dateToString : Date -> String
 dateToString date =
-    Date.format "M/d/y" date
+    Date.format "y-M-d" date
     
                 
 getWeek : List String -> Cmd Msg
@@ -177,7 +195,10 @@ update msg model =
                 ( { model | input = "", selectedHourUnit = newHourUnit }, saveHourUnit newHourUnit )
 
         SelectHourUnit hourUnit ->
-            ( { model | selectedHourUnit = hourUnit, inputVisibility = "visible", inputMessage = (formatDateHour hourUnit.dateHour) }, Cmd.none )
+            let
+                visibility = beforeTodayVisibility (model.today, hourUnit)
+            in
+                ( { model | selectedHourUnit = hourUnit, inputVisibility = visibility, inputMessage = (formatDateHour hourUnit.dateHour) }, Cmd.none )
 
         MouseOverHourUnit hourUnit ->
             ( { model | mouseOverHourUnit = hourUnit }, Cmd.none )
