@@ -28,7 +28,7 @@ fn run_server() {
         
         let mut server = Nickel::new();
         
-        let s = SledMiddleware::new();
+        let s = SledMiddleware::new("database");
         server.utilize(s);
         
         server.utilize(StaticFilesHandler::new("assets/"));

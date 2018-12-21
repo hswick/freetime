@@ -16,7 +16,6 @@ import Date exposing (Date, floor, add, format, compare, fromPosix)
 import Task
 
 
-
 -- MAIN
 
 
