@@ -62,7 +62,7 @@ init _ =
       , selectedHourUnit = emptyHourUnit
       , mouseOverHourUnit = emptyHourUnit
       , inputVisibility = "hidden"
-      , inputMessage = "Select an hour unit and fill in the content."
+      , inputMessage = "Select an hour unit and fill in the contents"
       , indexDate = (fromPosix utc (millisToPosix 0))
       , today = (fromPosix utc (millisToPosix 0))
       }
@@ -109,7 +109,7 @@ weekDates date =
 
 dateToString : Date -> String
 dateToString date =
-    Date.format "y-M-d" date
+    Date.format "y-MM-dd" date
     
                 
 getWeek : List String -> Cmd Msg
@@ -314,7 +314,7 @@ mouseOverView model =
         if hourUnit.dateHour == "" then
             div [ parentStyle ]
                 [ div [ childStyle ]
-                      [ (text "Hover mouse over a tile to preview it's contents") ]
+                      [ (text "Hover mouse over a tile to preview the contents") ]
                 ]
         else
             div [ parentStyle ]
