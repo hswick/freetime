@@ -3,3 +3,4 @@ elm-stuff
 /freetime_app/**/*.rs.bk
 /freetime_app/assets/*.js
 /freetime_app/assets/index.html
+/freetime_app/database/
